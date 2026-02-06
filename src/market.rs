@@ -52,6 +52,14 @@ impl PriceSize {
     fn __repr__(&self) -> String {
         format!("PriceSize(price={}, size={})", self.price, self.size)
     }
+
+    fn __getitem__(&self, key: &str) -> PyResult<f64> {
+        match key {
+            "price" => Ok(self.price),
+            "size" => Ok(self.size),
+            _ => Err(pyo3::exceptions::PyKeyError::new_err(key.to_string())),
+        }
+    }
 }
 
 /// Exchange prices for a runner (back/lay/traded)
