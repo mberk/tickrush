@@ -1,0 +1,21 @@
+[package]
+name = "tickrush"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance Betfair price stream reader"
+license = "MIT"
+
+[lib]
+name = "tickrush"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+flate2 = "1.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
