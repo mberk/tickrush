@@ -12,11 +12,13 @@ use std::collections::HashMap;
 // Helpers
 // =============================================================================
 
-/// Parse a Betfair datetime string like "2024-01-15T14:30:00.000Z" into a naive Python datetime
-/// (matching betfairlightweight which returns naive datetimes)
+/// Parse a Betfair datetime string like "2024-01-15T14:30:00.000Z" into a
+/// timezone-aware (UTC) Python datetime (matching current betfairlightweight,
+/// which attaches tzinfo=timezone.utc via ciso8601/strptime).
 fn parse_datetime(py: Python<'_>, s: &str) -> PyResult<PyObject> {
     let datetime_mod = py.import_bound("datetime")?;
     let datetime_cls = datetime_mod.getattr("datetime")?;
+    let utc = datetime_mod.getattr("timezone")?.getattr("utc")?;
 
     // Try parsing with fractional seconds first, then without
     let result = datetime_cls.call_method1("strptime", (s, "%Y-%m-%dT%H:%M:%S.%fZ"));
@@ -24,7 +26,10 @@ fn parse_datetime(py: Python<'_>, s: &str) -> PyResult<PyObject> {
         Ok(dt) => dt,
         Err(_) => datetime_cls.call_method1("strptime", (s, "%Y-%m-%dT%H:%M:%SZ"))?,
     };
-    Ok(dt.into())
+    let kwargs = PyDict::new_bound(py);
+    kwargs.set_item("tzinfo", &utc)?;
+    let dt_aware = dt.call_method("replace", (), Some(&kwargs))?;
+    Ok(dt_aware.into())
 }
 
 /// Parse a datetime string to PyObject, or return py.None()
@@ -1318,11 +1323,15 @@ impl MarketCache {
             Some(def)
         };
 
-        // Create cached publish_time as naive datetime (matching betfairlightweight)
+        // Create cached publish_time as a timezone-aware (UTC) datetime
+        // (matching current betfairlightweight)
         let timestamp = self.publish_time as f64 / 1000.0;
         let datetime_mod = py.import_bound("datetime")?;
         let datetime_cls = datetime_mod.getattr("datetime")?;
-        let cached_publish_time: PyObject = datetime_cls.call_method1("utcfromtimestamp", (timestamp,))?.into();
+        let utc = datetime_mod.getattr("timezone")?.getattr("utc")?;
+        let cached_publish_time: PyObject = datetime_cls
+            .call_method1("fromtimestamp", (timestamp, &utc))?
+            .into();
 
         // Create cached runners list
         let cached_runners = PyList::new_bound(py, runners.iter().map(|r| r.clone_ref(py))).into();
