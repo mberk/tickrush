@@ -241,9 +241,9 @@ impl MarketDefinition {
     #[getter] fn suspend_reason(&self) -> Option<&str> { None }
 }
 
-/// A runner in the market
+/// A runner's live order book within a MarketBook
 #[pyclass(frozen)]
-pub struct Runner {
+pub struct RunnerBook {
     #[pyo3(get)]
     pub(crate) selection_id: i64,
     #[pyo3(get)]
@@ -261,7 +261,7 @@ pub struct Runner {
 }
 
 #[pymethods]
-impl Runner {
+impl RunnerBook {
     #[getter]
     fn status(&self, py: Python<'_>) -> PyObject {
         self.cached_status.clone_ref(py)
@@ -444,7 +444,7 @@ impl MarketBook {
             .map_err(|e| pyo3::exceptions::PyTypeError::new_err(e.to_string()))?;
         let runner_dicts = PyList::empty_bound(py);
         for runner_obj in runners_list.iter() {
-            let runner: PyRef<Runner> = runner_obj.extract()?;
+            let runner: PyRef<RunnerBook> = runner_obj.extract()?;
             let r_dict = PyDict::new_bound(py);
             r_dict.set_item("selectionId", runner.selection_id)?;
             r_dict.set_item("handicap", runner.handicap)?;
@@ -719,7 +719,7 @@ struct RunnerCache {
     sp_lay_liability_taken: PriceLadder,
     // Generation tracking for object reuse
     generation: u64,
-    cached_runner: Option<Py<Runner>>,
+    cached_runner: Option<Py<RunnerBook>>,
     cached_generation: u64,
     // Cached Python list objects for price ladders (reused when unchanged)
     cached_back_list: Option<PyObject>,
@@ -921,8 +921,8 @@ impl RunnerCache {
         list
     }
 
-    /// Get or create the Python Runner object, reusing cached version if unchanged
-    fn to_runner(&mut self, py: Python<'_>) -> PyResult<Py<Runner>> {
+    /// Get or create the Python RunnerBook object, reusing cached version if unchanged
+    fn to_runner(&mut self, py: Python<'_>) -> PyResult<Py<RunnerBook>> {
         // If we have a cached version and generation matches, reuse it
         if let Some(ref cached) = self.cached_runner {
             if self.cached_generation == self.generation {
@@ -952,7 +952,7 @@ impl RunnerCache {
         // Pre-cache status as Python string (avoids creating new PyString each access)
         let cached_status = self.status.clone().into_py(py);
 
-        let runner = Runner {
+        let runner = RunnerBook {
             selection_id: self.selection_id,
             handicap: self.handicap,
             cached_status,
@@ -1257,11 +1257,11 @@ impl MarketCache {
 
     /// Create a MarketBook Python object with runner object reuse
     pub fn to_market_book(&mut self, py: Python<'_>) -> PyResult<Py<MarketBook>> {
-        // Get runners sorted by key, reusing cached Runner objects
+        // Get runners sorted by key, reusing cached RunnerBook objects
         let mut keys: Vec<_> = self.runners.keys().cloned().collect();
         keys.sort();
 
-        let mut runners: Vec<Py<Runner>> = Vec::with_capacity(keys.len());
+        let mut runners: Vec<Py<RunnerBook>> = Vec::with_capacity(keys.len());
         for key in keys {
             if let Some(runner_cache) = self.runners.get_mut(&key) {
                 runners.push(runner_cache.to_runner(py)?);

@@ -80,7 +80,7 @@ pub fn tickrush(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(iter_prices_file, m)?)?;
     m.add_class::<PricesIterator>()?;
     m.add_class::<market::MarketBook>()?;
-    m.add_class::<market::Runner>()?;
+    m.add_class::<market::RunnerBook>()?;
     m.add_class::<market::ExchangePrices>()?;
     m.add_class::<market::StartingPrices>()?;
     m.add_class::<market::PriceSize>()?;

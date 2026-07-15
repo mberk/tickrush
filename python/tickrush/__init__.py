@@ -7,7 +7,7 @@ from .tickrush import (
     MarketDefinitionRunner,
     PricesIterator,
     PriceSize,
-    Runner,
+    RunnerBook,
     StartingPrices,
     iter_prices_file,
 )
@@ -19,7 +19,7 @@ __all__ = [
     "MarketBook",
     "MarketDefinition",
     "MarketDefinitionRunner",
-    "Runner",
+    "RunnerBook",
     "ExchangePrices",
     "StartingPrices",
     "PriceSize",

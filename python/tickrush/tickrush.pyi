@@ -103,7 +103,7 @@ class MarketDefinition:
     @property
     def version(self) -> int: ...
 
-class Runner:
+class RunnerBook:
     selection_id: int
     handicap: float
     adjustment_factor: Optional[float]
@@ -155,7 +155,7 @@ class MarketBook:
     @property
     def market_definition(self) -> Optional[MarketDefinition]: ...
     @property
-    def runners(self) -> list[Runner]: ...
+    def runners(self) -> list[RunnerBook]: ...
     def to_dict(self) -> dict: ...
 
 class PricesIterator:
