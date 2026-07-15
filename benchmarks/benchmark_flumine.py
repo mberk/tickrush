@@ -34,22 +34,10 @@ TEST_FILE = Path(__file__).parent.parent / "tests" / "resources" / "PRO-1.170258
 _original_create_generator = HistoricalStream.create_generator
 
 
-def _tickrush_create_generator(self):
-    """Replacement create_generator that uses tickrush."""
-    stream_id = self.stream_id
-
-    def generator():
-        for market_book in tickrush.iter_prices_file(str(self.market_filter)):
-            market_book.streaming_unique_id = stream_id
-            yield [market_book]
-
-    return generator
-
-
 def run_simulation(markets, use_tickrush=False):
     """Run a flumine simulation, optionally using tickrush."""
     if use_tickrush:
-        HistoricalStream.create_generator = _tickrush_create_generator
+        HistoricalStream.create_generator = tickrush.create_generator
     else:
         HistoricalStream.create_generator = _original_create_generator
 
